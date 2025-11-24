@@ -1,4 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import { ArrowRight, Bot, MessagesSquare, ShieldCheck, Sparkles } from "lucide-react";
+import { AgentPanel } from "@/components/agent-panel";
+import { Chat } from "@/components/Chat";
+import type { Agent, AgentEvent, GuardrailCheck, Message } from "@/lib/types";
+import { callChatAPI } from "@/lib/api";
 
 const features = [
   {
@@ -37,9 +45,85 @@ const steps = [
 ];
 
 export default function Home() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [events, setEvents] = useState<AgentEvent[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [currentAgent, setCurrentAgent] = useState<string>("");
+  const [guardrails, setGuardrails] = useState<GuardrailCheck[]>([]);
+  const [context, setContext] = useState<Record<string, any>>({});
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const data = await callChatAPI("", conversationId ?? "");
+      setConversationId(data.conversation_id);
+      setCurrentAgent(data.current_agent);
+      setContext(data.context);
+      const initialEvents = (data.events || []).map((e: any) => ({
+        ...e,
+        timestamp: e.timestamp ?? Date.now(),
+      }));
+      setEvents(initialEvents);
+      setAgents(data.agents || []);
+      setGuardrails(data.guardrails || []);
+      if (Array.isArray(data.messages)) {
+        setMessages(
+          data.messages.map((m: any) => ({
+            id: Date.now().toString() + Math.random().toString(),
+            content: m.content,
+            role: "assistant",
+            agent: m.agent,
+            timestamp: new Date(),
+          }))
+        );
+      }
+    })();
+  }, []);
+
+  const handleSendMessage = async (content: string) => {
+    const userMsg: Message = {
+      id: Date.now().toString(),
+      content,
+      role: "user",
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+
+    const data = await callChatAPI(content, conversationId ?? "");
+
+    if (!conversationId) setConversationId(data.conversation_id);
+    setCurrentAgent(data.current_agent);
+    setContext(data.context);
+    if (data.events) {
+      const stamped = data.events.map((e: any) => ({
+        ...e,
+        timestamp: e.timestamp ?? Date.now(),
+      }));
+      setEvents((prev) => [...prev, ...stamped]);
+    }
+    if (data.agents) setAgents(data.agents);
+    if (data.guardrails) setGuardrails(data.guardrails);
+
+    if (data.messages) {
+      const responses: Message[] = data.messages.map((m: any) => ({
+        id: Date.now().toString() + Math.random().toString(),
+        content: m.content,
+        role: "assistant",
+        agent: m.agent,
+        timestamp: new Date(),
+      }));
+      setMessages((prev) => [...prev, ...responses]);
+    }
+
+    setIsLoading(false);
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100 text-slate-900">
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-6 py-10 space-y-10">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-lg">
@@ -67,7 +151,7 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="grid gap-10 py-12 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-500 shadow-sm ring-1 ring-slate-200">
               Nueva experiencia de atención
@@ -168,34 +252,51 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="demo" className="grid gap-8 rounded-3xl border border-slate-200 bg-white/70 px-6 py-10 shadow-sm backdrop-blur sm:grid-cols-3">
-          <div className="space-y-2 sm:col-span-1">
-            <p className="text-sm font-semibold text-slate-500">Diseñado para probar rápido</p>
-            <h3 className="text-2xl font-bold text-slate-900">Explora la demo end-to-end</h3>
-            <p className="text-base text-slate-600">
-              La interfaz ya incluye panel de agentes, guardrails, contexto y chat. Solo conecta tu API key y comienza a
-              experimentar.
-            </p>
-          </div>
-          <div className="sm:col-span-2">
-            <div className="grid gap-4 sm:grid-cols-3">
+        <section id="demo" className="space-y-4 rounded-3xl border border-slate-200 bg-white/70 px-6 py-8 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-slate-500">Diseñado para probar rápido</p>
+              <h3 className="text-2xl font-bold text-slate-900">Prueba el chat en vivo</h3>
+              <p className="text-base text-slate-600">
+                La interfaz ya incluye panel de agentes, guardrails, contexto y chat. Envía un mensaje y observa cómo se
+                orquesta la conversación.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm text-slate-600 sm:w-[320px]">
               {features.map((feature) => (
                 <div
                   key={feature.title}
-                  className="group flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm transition hover:-translate-y-1 hover:bg-white"
+                  className="flex items-start gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
-                    <feature.icon className="h-5 w-5" />
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-md">
+                    <feature.icon className="h-4 w-4" />
                   </div>
-                  <h4 className="text-base font-semibold text-slate-900">{feature.title}</h4>
-                  <p className="text-sm text-slate-600">{feature.description}</p>
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900">{feature.title}</h4>
+                    <p className="text-xs text-slate-600">{feature.description}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
+
+          <div className="flex flex-col gap-4 lg:flex-row">
+            <div className="flex-1 min-h-[520px] lg:max-w-[48%]">
+              <AgentPanel
+                agents={agents}
+                currentAgent={currentAgent}
+                events={events}
+                guardrails={guardrails}
+                context={context}
+              />
+            </div>
+            <div className="flex-1 min-h-[520px]">
+              <Chat messages={messages} onSendMessage={handleSendMessage} isLoading={isLoading} />
+            </div>
+          </div>
         </section>
 
-        <section id="flujo" className="mt-14 rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-10 text-white shadow-xl">
+        <section id="flujo" className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-10 text-white shadow-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl space-y-3">
               <p className="text-sm font-semibold uppercase tracking-wide text-emerald-200">Flujo del orquestador</p>

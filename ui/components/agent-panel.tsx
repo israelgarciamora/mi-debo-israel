@@ -32,7 +32,7 @@ export function AgentPanel({
   const runnerEvents = events.filter((e) => e.type !== "message");
 
   return (
-    <div className="w-3/5 h-full flex flex-col border-r border-gray-200 bg-white rounded-xl shadow-sm">
+    <div className="flex-1 h-full flex flex-col border-r border-gray-200 bg-white rounded-xl shadow-sm">
       <div className="bg-blue-600 text-white h-12 px-4 flex items-center gap-3 shadow-sm rounded-t-xl">
         <Bot className="h-5 w-5" />
         <h1 className="font-semibold text-sm sm:text-base lg:text-lg">Agent View</h1>
