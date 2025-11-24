@@ -70,12 +70,12 @@ The backend will be available at: [http://localhost:8000](http://localhost:8000)
 From the `ui` folder, run:
 
 ```bash
-npm run dev
+# if you are in a cloud editor, keep the host open so the preview works
+npm run dev -- --hostname 0.0.0.0 --port 3000
 ```
 
-The frontend will be available at: [http://localhost:3000](http://localhost:3000)
-
-This command will also start the backend.
+The frontend will be available at: [http://localhost:3000](http://localhost:3000). In hosted editors, forward or open the
+exposed port 3000 to see the UI. This command will also start the backend.
 
 ## Customization
 
