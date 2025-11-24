@@ -148,6 +148,26 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="rounded-3xl border border-slate-200 bg-white/80 px-6 py-6 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-500">¿Cómo ver la demo en tu máquina?</p>
+              <p className="text-base text-slate-700">
+                Sigue estos pasos rápidos para levantar el front y el backend y explorar la experiencia completa.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 shadow-inner">
+              <ol className="list-decimal space-y-1 pl-4">
+                <li>Instala dependencias: <code className="rounded bg-white px-1">npm install</code></li>
+                <li>
+                  Arranca la demo: <code className="rounded bg-white px-1">npm run dev</code>
+                </li>
+                <li>Abre el navegador en <code className="rounded bg-white px-1">http://localhost:3000</code>.</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
         <section id="demo" className="grid gap-8 rounded-3xl border border-slate-200 bg-white/70 px-6 py-10 shadow-sm backdrop-blur sm:grid-cols-3">
           <div className="space-y-2 sm:col-span-1">
             <p className="text-sm font-semibold text-slate-500">Diseñado para probar rápido</p>
